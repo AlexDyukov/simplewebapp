@@ -1,3 +1,5 @@
+//go:build !nethttppost
+
 package main
 
 import (
@@ -8,9 +10,15 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func getTime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func getTimezone(r *http.Request) string {
 	query := r.URL.Query()
 	timezone := query.Get("timezone")
+
+	return timezone
+}
+
+func getTime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	timezone := getTimezone(r)
 
 	currentTime, err := currtime.GetTime(timezone)
 	if err != nil {
