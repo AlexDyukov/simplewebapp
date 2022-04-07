@@ -3,57 +3,69 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
-
-	"github.com/alexdyukov/currtime"
-	"github.com/julienschmidt/httprouter"
+	"time"
 )
 
-func getTimezone(r *http.Request) (string, error) {
-	var tz struct {
-		Timezone string `json:"timezone"`
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
+func getTimezone(request *http.Request) (string, error) {
+	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		return "", err
 	}
 
-	if err := json.Unmarshal(body, &tz); err != nil {
-		return "", err
+	timezone := string(body)
+	if len(timezone) == 0 {
+		timezone = "UTC"
 	}
 
-	return tz.Timezone, nil
+	return timezone, nil
 }
 
-func getTime(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	if r.Header.Get("Content-type") != "application/json" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+type handler struct{}
 
-	timezone, err := getTimezone(r)
+func (h *handler) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+	timezone, err := getTimezone(request)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		responseWriter.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	currentTime, err := currtime.GetTime(timezone)
+	now, err := getTime(timezone)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		responseWriter.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	fmt.Fprintln(w, currentTime)
+	fmt.Fprintln(responseWriter, now)
 }
 
 func listenAndServe(conf WebConfig) {
-	router := httprouter.New()
+	mux := http.NewServeMux()
+	mux.Handle("/time", &handler{})
 
-	router.POST("/time", getTime)
+	timeout := time.Second
 
-	http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), router)
+	server := &http.Server{
+		Addr:                         fmt.Sprintf(":%d", conf.Port),
+		Handler:                      mux,
+		TLSConfig:                    nil,
+		ReadTimeout:                  timeout,
+		ReadHeaderTimeout:            timeout,
+		WriteTimeout:                 timeout,
+		IdleTimeout:                  timeout,
+		MaxHeaderBytes:               0,
+		TLSNextProto:                 nil,
+		ConnState:                    nil,
+		ErrorLog:                     nil,
+		BaseContext:                  nil,
+		ConnContext:                  nil,
+		DisableGeneralOptionsHandler: false,
+	}
+
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
 }

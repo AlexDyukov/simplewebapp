@@ -2,21 +2,23 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"os"
+	"log"
 )
 
 type WebConfig struct {
 	Port int
 }
 
-func (c *WebConfig) ParseParams() {
-	flag.IntVar(&c.Port, "port", 8080, "http listen port, 1025-65535")
+const (
+	defaultPort = 8080
+)
+
+func (cfg *WebConfig) ParseParams() {
+	flag.IntVar(&cfg.Port, "port", defaultPort, "http listen port, 1025-65535")
 	flag.Parse()
 
-	if c.Port < 1025 || c.Port > 65535 {
+	if cfg.Port < 1025 || cfg.Port > 65535 {
 		fmtStr := "invalid value \"%d\" for flag -port: should be in range [1025;65535]\n"
-		fmt.Printf(fmtStr, c.Port)
-		os.Exit(2)
+		log.Fatalf(fmtStr, cfg.Port)
 	}
 }
