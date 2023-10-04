@@ -1,4 +1,4 @@
-//go:build !nethttppost && !fasthttpget && !fasthttppost
+//go:build !nethttprawpost && !fasthttprawget && !fasthttprawpost
 
 package main
 
@@ -31,12 +31,14 @@ func (h *handler) ServeHTTP(responseWriter http.ResponseWriter, request *http.Re
 }
 
 func getTimezone(request *http.Request) (string, error) {
-	timezone := request.URL.Query().Get("timezone")
-	if timezone == "" {
-		timezone = "UTC"
+	query := request.URL.Query()
+
+	timezone := query["timezone"]
+	if len(timezone) == 0 {
+		return "UTC", nil
 	}
 
-	return timezone, nil
+	return timezone[0], nil
 }
 
 func listenAndServe(conf WebConfig) {

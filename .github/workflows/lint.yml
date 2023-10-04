@@ -1,0 +1,22 @@
+name: lint
+on:
+  push:
+    branches-ignore:
+    - master
+jobs:
+  golangci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install golang
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'oldstable'
+          check-latest: true
+      - name: Checkout git repository
+        uses: actions/checkout@v3
+      - name: Run tests
+        run: go test ./... -race -parallel 2 -shuffle on -v
+        env:
+          CGO_ENABLED: 1
+      - name: Run linters
+        uses: golangci/golangci-lint-action@v3

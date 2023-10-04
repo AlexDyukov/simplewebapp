@@ -1,4 +1,4 @@
-//go:build nethttppost
+//go:build nethttprawpost
 
 package main
 
