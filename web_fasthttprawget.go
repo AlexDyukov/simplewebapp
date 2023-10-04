@@ -1,4 +1,4 @@
-//go:build fasthttpget
+//go:build fasthttprawget
 
 package main
 

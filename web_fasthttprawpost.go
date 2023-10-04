@@ -1,4 +1,4 @@
-//go:build fasthttppost
+//go:build fasthttprawpost
 
 package main
 
